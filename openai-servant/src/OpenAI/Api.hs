@@ -4,6 +4,7 @@ module OpenAI.Api where
 import OpenAI.Resources
 import Servant.API
 import Servant.Multipart.API
+import qualified Data.Text as T
 
 type OpenAIAuth = BasicAuth "OpenAI API" ()
 
@@ -15,6 +16,7 @@ type OpenAIApiInternal =
     :<|> "files" :> FilesApi
     :<|> AnswerApi
     :<|> FineTuneApi
+    :<|> ChatCompletionApi
 
 type FilesApi =
   OpenAIAuth :> MultipartForm Mem FileCreate :> Post '[JSON] File
@@ -36,4 +38,6 @@ type EnginesApi =
     :<|> OpenAIAuth :> Capture "engine_id" EngineId :> "completions" :> ReqBody '[JSON] TextCompletionCreate :> Post '[JSON] TextCompletion
     :<|> OpenAIAuth :> Capture "engine_id" EngineId :> "search" :> ReqBody '[JSON] SearchResultCreate :> Post '[JSON] (OpenAIList SearchResult)
     :<|> OpenAIAuth :> Capture "engine_id" EngineId :> "embeddings" :> ReqBody '[JSON] EmbeddingCreate :> Post '[JSON] (OpenAIList Embedding)
-    :<|> OpenAIAuth :> Capture "engine_id" EngineId :> "chat" :> "completions" :> ReqBody '[JSON] ChatCompletionCreate :> Post '[JSON] ChatCompletion
+
+type ChatCompletionApi =
+    Header "Authorization" T.Text :> "chat" :> "completions" :> ReqBody '[JSON] ChatCompletionCreate :> Post '[JSON] ChatCompletion
