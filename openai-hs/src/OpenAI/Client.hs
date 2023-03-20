@@ -64,6 +64,16 @@ module OpenAI.Client
     getAnswer,
     AnswerReq (..),
     AnswerResp (..),
+
+    -- *
+    ChatCompletionMessage (..),
+    ChatCompletionCreate (..),
+    ChatCompletionId (..),
+    ChatCompletionChoice (..),
+    ChatCompletionUsage (..),
+    ChatCompletion (..),
+    defaultChatCompletionCreate,
+    completeChat
   )
 where
 
@@ -84,7 +94,9 @@ type ApiKey = T.Text
 
 -- | Holds a 'Manager' and your API key.
 data OpenAIClient = OpenAIClient
+  -- basic auth is deprecated
   { scBasicAuthData :: BasicAuthData,
+    scApiKey :: T.Text,
     scManager :: Manager,
     scMaxRetries :: Int
   }
@@ -96,7 +108,7 @@ makeOpenAIClient ::
   -- | Number of automatic retries the library should attempt.
   Int ->
   OpenAIClient
-makeOpenAIClient k = OpenAIClient (BasicAuthData "" (T.encodeUtf8 k))
+makeOpenAIClient k = OpenAIClient (BasicAuthData "" (T.encodeUtf8 k)) k
 
 api :: Proxy OpenAIApi
 api = Proxy
@@ -119,9 +131,15 @@ openaiBaseUrl = BaseUrl Https "api.openai.com" 443 ""
     N :: OpenAIClient -> ARG -> ARG2 -> IO (Either ClientError R);\
     N sc a b = runRequest (scMaxRetries sc) 0 $ runClientM (N##' (scBasicAuthData sc) a b) (mkClientEnv (scManager sc) openaiBaseUrl)
 
+#define EP2V1(N, ARG, ARG2, R) \
+    N##' :: ARG -> ARG2 -> ClientM R;\
+    N :: OpenAIClient -> ARG2 -> IO (Either ClientError R);\
+    N sc a = runRequest (scMaxRetries sc) 0 $ runClientM (N##' (Just ("Bearer " <> scApiKey sc)) a) (mkClientEnv (scManager sc) openaiBaseUrl)
+
 EP2 (completeText, EngineId, TextCompletionCreate, TextCompletion)
 EP2 (searchDocuments, EngineId, SearchResultCreate, (OpenAIList SearchResult))
 EP2 (createEmbedding, EngineId, EmbeddingCreate, (OpenAIList Embedding))
+EP2V1 (completeChat, Maybe ApiKey, ChatCompletionCreate, ChatCompletion)
 
 EP (createFineTune, FineTuneCreate, FineTune)
 EP0 (listFineTunes, (OpenAIList FineTune))
@@ -156,5 +174,7 @@ EP (getAnswer, AnswerReq, AnswerResp)
            :<|> getFineTune'
            :<|> cancelFineTune'
            :<|> listFineTuneEvents'
-         ) =
+       )
+  :<|> completeChat'
+         =
     client api

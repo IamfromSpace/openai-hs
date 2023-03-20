@@ -1,3 +1,5 @@
+{-# LANGUAGE NamedFieldPuns #-}
+
 module ApiSpec (apiSpec) where
 
 import qualified Data.Text as T
@@ -155,3 +157,18 @@ apiTests =
               srDocument res `shouldBe` 0 -- pool
               srMetadata res `shouldBe` Just "pool"
               pure ()
+      describe "chat completion" $
+        do
+          it "works (smoke test)" $ \cli ->
+            do
+              completionResults <-
+                forceSuccess $
+                  completeChat cli $
+                    (defaultChatCompletionCreate "gpt-3.5-turbo" [ChatCompletionMessage "system" "Answer yes or no", ChatCompletionMessage "user" "yes?"])
+                      { cccMaxTokens = Just 2
+                      }
+              V.length (ccChoices completionResults) `shouldBe` 1
+              let ChatCompletionChoice { cccMessage } = V.head (ccChoices completionResults)
+              let ChatCompletionMessage { ccmRole, ccmContent } = cccMessage
+              T.length ccmContent `shouldNotBe` 0
+              ccmRole `shouldBe` "assistant"
