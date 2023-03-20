@@ -45,6 +45,15 @@ module OpenAI.Resources
     -- * Answers API
     AnswerReq (..),
     AnswerResp (..),
+
+    -- * Chat Completion API
+    ChatCompletionMessage (..),
+    ChatCompletionCreate (..),
+    ChatCompletionId (..),
+    ChatCompletionChoice (..),
+    ChatCompletionUsage (..),
+    ChatCompletion (..),
+    defaultChatCompletionCreate,
   )
 where
 
@@ -288,6 +297,73 @@ data AnswerResp = AnswerResp
   }
   deriving (Show, Eq)
 
+data ChatCompletionMessage = ChatCompletionMessage
+  { cmRole :: T.Text,
+    cmContent :: T.Text
+  }
+  deriving (Show, Eq)
+
+data ChatCompletionCreate = ChatCompletionCreate
+  { cccModel :: T.Text,
+    cccMessages :: [ChatCompletionMessage],
+    cccTemperature :: Maybe Double,
+    cccTopP :: Maybe Double,
+    cccN :: Maybe Int,
+    cccStream :: Maybe Bool,
+    cccStop :: Maybe (V.Vector T.Text),
+    cccMaxTokens :: Maybe Int,
+    cccPresencePenalty :: Maybe Double,
+    cccFrequencyPenalty :: Maybe Double,
+    -- TODO: Should probably be a Map
+    cccLogitBias :: Maybe (V.Vector (T.Text, Int)),
+    cccUser :: Maybe T.Text
+  }
+  deriving (Show, Eq)
+
+-- | Applies API defaults, only passing a model and prompting messages.
+defaultChatCompletionCreate :: T.Text -> [ChatCompletionMessage] -> ChatCompletionCreate
+defaultChatCompletionCreate model prompt =
+  ChatCompletionCreate
+    { cccModel = model,
+      cccMessages = prompt,
+      cccTemperature = Nothing,
+      cccTopP = Nothing,
+      cccN = Nothing,
+      cccStream = Nothing,
+      cccStop = Nothing,
+      cccMaxTokens = Nothing,
+      cccPresencePenalty = Nothing,
+      cccFrequencyPenalty = Nothing,
+      cccLogitBias = Nothing,
+      cccUser = Nothing
+    }
+
+newtype ChatCompletionId = ChatCompletionId {unChatCompletionId :: T.Text}
+  deriving (Show, Eq, ToJSON, FromJSON, ToHttpApiData)
+
+data ChatCompletionChoice = ChatCompletionChoice
+  { cccIndex :: Int,
+    cccMessage :: ChatCompletionMessage,
+    cccFinishReason :: T.Text
+  }
+  deriving (Show, Eq)
+
+data ChatCompletionUsage = ChatCompletionUsage
+  { ccuPromptTokens :: Int,
+    ccuCompletionTokens :: Int,
+    ccuTotalTokens :: Int
+  }
+  deriving (Show, Eq)
+
+data ChatCompletion = ChatCompletion
+  { ccId :: TextCompletionId,
+    ccObject :: T.Text,
+    ccCreated :: TimeStamp,
+    ccChoices :: V.Vector ChatCompletionChoice,
+    ccUsage :: ChatCompletionUsage
+  }
+  deriving (Show, Eq)
+
 $(deriveJSON (jsonOpts 2) ''OpenAIList)
 $(deriveJSON (jsonOpts 1) ''Engine)
 $(deriveJSON (jsonOpts 3) ''TextCompletionChoice)
@@ -307,6 +383,11 @@ $(deriveJSON (jsonOpts 2) ''FineTune)
 $(deriveJSON (jsonOpts 2) ''SearchHunk)
 $(deriveJSON (jsonOpts 2) ''ClassificationHunk)
 $(deriveJSON (jsonOpts 3) ''FineTuneHunk)
+$(deriveJSON (jsonOpts 3) ''ChatCompletionMessage)
+$(deriveJSON (jsonOpts 3) ''ChatCompletionCreate)
+$(deriveJSON (jsonOpts 3) ''ChatCompletionChoice)
+$(deriveJSON (jsonOpts 3) ''ChatCompletionUsage)
+$(deriveJSON (jsonOpts 2) ''ChatCompletion)
 
 packDocuments :: [FileHunk] -> BSL.ByteString
 packDocuments docs =

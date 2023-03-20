@@ -36,3 +36,4 @@ type EnginesApi =
     :<|> OpenAIAuth :> Capture "engine_id" EngineId :> "completions" :> ReqBody '[JSON] TextCompletionCreate :> Post '[JSON] TextCompletion
     :<|> OpenAIAuth :> Capture "engine_id" EngineId :> "search" :> ReqBody '[JSON] SearchResultCreate :> Post '[JSON] (OpenAIList SearchResult)
     :<|> OpenAIAuth :> Capture "engine_id" EngineId :> "embeddings" :> ReqBody '[JSON] EmbeddingCreate :> Post '[JSON] (OpenAIList Embedding)
+    :<|> OpenAIAuth :> Capture "engine_id" EngineId :> "chat" :> "completions" :> ReqBody '[JSON] ChatCompletionCreate :> Post '[JSON] ChatCompletion
