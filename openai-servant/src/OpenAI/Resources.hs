@@ -298,8 +298,8 @@ data AnswerResp = AnswerResp
   deriving (Show, Eq)
 
 data ChatCompletionMessage = ChatCompletionMessage
-  { cmRole :: T.Text,
-    cmContent :: T.Text
+  { ccmRole :: T.Text,
+    ccmContent :: T.Text
   }
   deriving (Show, Eq)
 
